@@ -19,16 +19,6 @@ TRUNCATE TABLE Employee;
 -- ✅ Réactiver les contraintes de clé étrangère
 SET FOREIGN_KEY_CHECKS = 1;
 
--- ✅ Vérifier si un propriétaire (`Owner`) existe et en créer un si nécessaire
-INSERT INTO Owner (nom, prenom, email, motDePasse, adresse, ville, codePostal, createdAt, updatedAt) 
-SELECT 'Doe', 'John', 'john.doe@example.com', 'password123', '123 Rue Exemple', 'Paris', '75001', NOW(), NOW()
-WHERE NOT EXISTS (SELECT 1 FROM Owner WHERE id = 1);
-
--- ✅ Vérifier si une entreprise (`Company`) existe et en créer une si nécessaire
-INSERT INTO Company (nomEntreprise, siret, email, motDePasse, adresse, ville, codePostal, corpsEtat, createdAt, updatedAt) 
-SELECT 'Entreprise Test', '12345678900012', 'contact@entreprise.com', 'password123', '456 Rue Exemple', 'Paris', '75002', 'Plomberie', NOW(), NOW()
-WHERE NOT EXISTS (SELECT 1 FROM Company WHERE id = 1);
-
 -- ✅ Insérer des annonces (`Ad`)
 INSERT INTO Ad (title, location, workArea, maxBudget, description, ownerId, createdAt, updatedAt) VALUES
     ('Rénovation maison', 'Paris', 'Plomberie', 15000, 'Rénovation complète de la plomberie.', 1, NOW(), NOW()),
