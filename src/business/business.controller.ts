@@ -9,7 +9,7 @@ import {
   UploadedFile, 
   UseInterceptors, 
   Request,
-  Req
+  Req,Patch, Delete
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -83,17 +83,78 @@ export class BusinessController {
     return this.businessService.getQuotesByAd(Number(adId));
   }
 
-    // ✅ Récupérer les devis proposés par l'entreprise connectée
-    @Get('my-quotes')
-    async getMyQuotes(@Req() req) {
+  @Get('my-quotes')
+  async getMyQuotes(@Req() req) {
       console.log("🔍 Debug - Utilisateur connecté :", req.user);
   
-      if (!req.user || req.user.userType !== 'company') {
-        return { message: "Utilisateur non autorisé" };
+      if (!req.user || req.user.role !== 'company') {
+          return { message: "Utilisateur non autorisé" }; // ⚠️ Problème ici
       }
-
   
       const companyId = req.user.companyId;
       return this.businessService.getQuotesByCompany(companyId);
+  }
+  
+
+  // ✅ Transformer une annonce en chantier
+  @Post('/convert-to-chantier/:annonceId')
+  async convertToChantier(@Req() req, @Param('annonceId') annonceId: string) {
+    console.log("🔍 Transformation en chantier pour annonce :", annonceId);
+    return this.businessService.transformAnnonceToChantier(Number(annonceId), req.user.companyId);
+  }
+
+  @Post('/chantier/:chantierId/add-step')
+async addStep(
+    @Param('chantierId') chantierId: string,
+    @Body() body: { stepName: string; details: string[] },
+    @Req() req: AuthenticatedRequest
+) {
+    console.log("🔍 Ajout d'une étape :", body.stepName);
+
+    if (!body.stepName || !body.details || body.details.length === 0) {
+        throw new BadRequestException("Les champs 'stepName' et 'details' sont obligatoires.");
     }
+
+    return this.businessService.addStep(Number(chantierId), body.stepName, body.details);
+}
+  
+@Delete('chantier/:chantierId')
+async deleteChantier(@Param('chantierId') chantierId: string) {
+    console.log(`🚧 Suppression du chantier ID: ${chantierId}`);
+    return this.businessService.deleteChantier(Number(chantierId));
+}
+
+  // ✅ Récupérer les étapes d'un chantier
+  @Get('chantier/:chantierId/steps')
+  async getSteps(@Param('chantierId') chantierId: string) {
+    return this.businessService.getChantierSteps(Number(chantierId));
+  }
+
+  @Patch('chantier/validate-step/:stepId')
+  async validateStep(@Param('stepId') stepId: number) {
+    return this.businessService.validateStep(Number(stepId));
+  }
+  
+  @Patch('chantier/invalidate-step/:stepId')
+  async invalidateStep(@Param('stepId') stepId: number) {
+    return this.businessService.invalidateStep(Number(stepId));
+  }
+  
+  // ✅ Vérifier si un chantier est terminé
+  @Get('/chantier/:chantierId/check-completion')
+  async checkCompletion(@Param('chantierId') chantierId: string) {
+    return this.businessService.checkChantierCompletion(Number(chantierId));
+  }
+
+  // ✅ Ajouter une réserve à une étape
+  @Patch('/chantier/add-reserve/:stepId')
+  async addReserve(@Param('stepId') stepId: string, @Body() body: { reserveText: string }) {
+    console.log("🚨 Ajout de réserve pour l'étape :", stepId);
+    return this.businessService.addReserve(Number(stepId), body.reserveText);
+  }
+
+  @Get('chantiers')
+  async getAllChantiers(@Req() req) {
+    return this.businessService.getAllChantiers();
+  }  
 }

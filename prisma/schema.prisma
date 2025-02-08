@@ -37,6 +37,7 @@ model Company {
   exchanges  Exchange[]
   invoices   Invoice[]
   activities Activity[]
+  chantiers  Chantier[] // ✅ Correction : relation inverse vers `Chantier`
 }
 
 model Ad {
@@ -51,6 +52,8 @@ model Ad {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   quotes      Quote[] // Relation avec les devis
+  chantier    Chantier? // ✅ Correction : relation inverse vers `Chantier`
+
 }
 
 model Quote {
@@ -60,6 +63,8 @@ model Quote {
   description String
   fileUrl     String? // Stocke l'URL du fichier devis (optionnel)
   status      String   @default("pending") // pending, accepted, rejected
+  duration    String   @default("6 mois") // Durée par défaut
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -74,6 +79,7 @@ model Quote {
 
   project   Project? @relation(fields: [projectId], references: [id], map: "Project_Quote_fkey")
   projectId Int?
+  exchanges  Exchange[]
 }
 
 model Owner {
@@ -138,28 +144,6 @@ model Employee {
   updatedAt DateTime  @updatedAt
 }
 
-model Exchange {
-  id        Int       @id @default(autoincrement())
-  title     String
-  object    String
-  company   Company   @relation(fields: [companyId], references: [id])
-  companyId Int
-  owner     Owner     @relation(fields: [ownerId], references: [id])
-  ownerId   Int
-  messages  Message[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-}
-
-model Message {
-  id         Int      @id @default(autoincrement())
-  content    String   @db.Text
-  sender     String
-  exchange   Exchange @relation(fields: [exchangeId], references: [id])
-  exchangeId Int
-  createdAt  DateTime @default(now())
-}
-
 model Invoice {
   id           Int      @id @default(autoincrement())
   clientName   String
@@ -184,3 +168,57 @@ model Activity {
   companyId    Int
   createdAt    DateTime @default(now())
 }
+
+model Exchange {
+  id         Int       @id @default(autoincrement())
+  companyId  Int
+  ownerId    Int
+  messages   Message[]
+  createdAt  DateTime  @default(now())
+
+  // Ajout de la relation avec Quote
+  quoteId    Int?
+  quote      Quote?    @relation(fields: [quoteId], references: [id])
+
+  company    Company   @relation(fields: [companyId], references: [id])
+  owner      Owner     @relation(fields: [ownerId], references: [id])
+}
+
+model Message {
+  id          Int       @id @default(autoincrement())
+  exchange    Exchange  @relation(fields: [exchangeId], references: [id])
+  exchangeId  Int
+  sender      String    // "owner" ou "business"
+  content     String
+  fileUrl     String?   // Optionnel
+  timestamp   DateTime  @default(now())
+}
+
+model Chantier {
+  id         Int      @id @default(autoincrement())
+  adId       Int      @unique
+  ad         Ad       @relation(fields: [adId], references: [id])
+  companyId  Int
+  company    Company  @relation(fields: [companyId], references: [id])
+  status     String   @default("en cours") // Peut être "en cours" ou "terminé"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  etapes     Etape[]
+}
+
+model Etape {
+  id               Int      @id @default(autoincrement())
+  chantierId       Int
+  chantier         Chantier @relation(fields: [chantierId], references: [id])
+  name             String
+  details          Json      
+  completed        Boolean  @default(false)
+  ownerValidated   Boolean  @default(false)
+  companyValidated Boolean  @default(false)
+  reserve          String?  // Peut contenir des notes si l'étape est refusée
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+
+

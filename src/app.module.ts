@@ -6,6 +6,7 @@ import { BusinessModule } from './business/business.module';
 import { OwnerModule } from './owner/owner.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppController } from './app.controller';
+import { ExchangeModule } from './exchange/exchange.module';
 import { AppService } from './app.service';  // Ajouté
 
 @Module({
@@ -15,6 +16,7 @@ import { AppService } from './app.service';  // Ajouté
     UsersModule,
     BusinessModule,
     OwnerModule,
+    ExchangeModule,
   ],
   controllers: [AppController],  
   providers: [AppService, PrismaService], 
